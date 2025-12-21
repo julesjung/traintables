@@ -20,3 +20,4 @@ jobs:
         with:
           name: gtfs
           path: gtfs/gtfs.sqlite
+          retention-days: 7
