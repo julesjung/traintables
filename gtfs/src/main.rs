@@ -1,4 +1,5 @@
 mod stops;
+mod update;
 
 use anyhow::Result;
 use rusqlite::{Connection, params};
@@ -9,7 +10,10 @@ use std::{
 };
 use zip::ZipArchive;
 
-use crate::stops::{Station, StopPoint, parse_stops};
+use crate::{
+    stops::{Station, StopPoint, parse_stops},
+    update::create_version_file,
+};
 
 #[derive(Deserialize)]
 struct SNCFOpenDataRecord {
@@ -135,6 +139,8 @@ async fn main() -> Result<()> {
 
     create_dir_all("build")?;
     create_database(stations, stop_points, "build/gtfs.sqlite")?;
+
+    create_version_file("build/version.txt")?;
 
     Ok(())
 }
