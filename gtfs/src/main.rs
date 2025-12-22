@@ -1,8 +1,16 @@
+mod stops;
+
 use anyhow::Result;
+use flate2::{Compression, write::GzEncoder};
 use rusqlite::{Connection, params};
 use serde::Deserialize;
-use std::{fs::File, io::copy};
+use std::{
+    fs::{File, create_dir_all},
+    io::{Cursor, Read},
+};
 use zip::ZipArchive;
+
+use crate::stops::{Station, StopPoint, parse_stops};
 
 #[derive(Deserialize)]
 struct SNCFOpenDataRecord {
@@ -36,68 +44,41 @@ async fn get_gtfs_url() -> Result<String> {
     Ok(gtfs_url)
 }
 
-async fn download_gtfs(gtfs_url: &str, gtfs_path: &str) -> Result<()> {
+async fn fetch_stops(gtfs_url: &str) -> Result<Vec<u8>> {
     let data = reqwest::get(gtfs_url).await?.bytes().await?;
-    let mut file = File::create(gtfs_path)?;
-    copy(&mut data.as_ref(), &mut file)?;
 
-    Ok(())
+    let reader = Cursor::new(data.to_vec());
+    let mut archive = ZipArchive::new(reader)?;
+
+    let mut stops = archive.by_name("stops.txt")?;
+
+    let mut buffer = Vec::with_capacity(stops.size() as usize);
+    stops.read_to_end(&mut buffer)?;
+
+    Ok(buffer)
 }
 
-fn extract_file(archive: &mut ZipArchive<File>, file_path: &str) -> Result<()> {
-    let mut zip_file = archive.by_name(file_path)?;
-    let mut file = File::create(file_path)?;
-    std::io::copy(&mut zip_file, &mut file)?;
-
-    Ok(())
-}
-
-fn extract_gtfs(gtfs_path: &str) -> Result<()> {
-    let file = File::open(gtfs_path)?;
-    let mut archive = ZipArchive::new(file)?;
-
-    extract_file(&mut archive, "stops.txt")?;
-
-    Ok(())
-}
-
-#[derive(Debug, Deserialize)]
-struct Stop {
-    stop_id: String,
-    stop_name: String,
-    location_type: u8,
-}
-
-fn parse_stops(path: &str) -> Result<Vec<Stop>> {
-    let mut reader = csv::Reader::from_path(path)?;
-    let mut stops = Vec::new();
-
-    for stop in reader.deserialize() {
-        let stop: Stop = stop?;
-
-        if stop.location_type == 1 {
-            stops.push(stop);
-        }
-    }
-
-    Ok(stops)
-}
-
-fn create_database(stops: Vec<Stop>, path: &str) -> Result<()> {
+fn create_database(stations: Vec<Station>, stop_points: Vec<StopPoint>, path: &str) -> Result<()> {
     let mut connection = Connection::open(path)?;
 
     connection.execute_batch(
         "
-        PRAGMA journal_mode = OFF;
-        PRAGMA synchronous = OFF;
-        PRAGMA temp_store = MEMORY;
-
-        CREATE TABLE IF NOT EXISTS stops (
-            stop_id TEXT PRIMARY KEY,
-            stop_name TEXT NOT NULL
+        CREATE TABLE stations (
+            station_id TEXT PRIMARY KEY,
+            station_name TEXT NOT NULL,
+            station_latitude REAL,
+            station_longitude REAL
         );
 
-        CREATE INDEX IF NOT EXISTS index_stops_name ON stops(stop_name);
+        CREATE TABLE stop_points (
+            stop_point_id TEXT PRIMARY KEY,
+            stop_point_name TEXT NOT NULL,
+            station_id TEXT NOT NULL,
+            FOREIGN KEY (station_id) REFERENCES stations(station_id)
+        );
+
+        CREATE INDEX index_stations_name ON stations(station_name);
+        CREATE INDEX index_stop_points_id ON stop_points(stop_point_id);
         ",
     )?;
 
@@ -106,10 +87,34 @@ fn create_database(stops: Vec<Stop>, path: &str) -> Result<()> {
 
         {
             let mut statement = transaction
-                .prepare("INSERT OR REPLACE INTO stops (stop_id, stop_name) VALUES (?1, ?2)")?;
+                .prepare("INSERT INTO stations (station_id, station_name, station_latitude, station_longitude) VALUES (?1, ?2, ?3, ?4)")?;
 
-            for stop in stops {
-                statement.execute(params![stop.stop_id, stop.stop_name])?;
+            for station in stations {
+                statement.execute(params![
+                    station.id,
+                    station.name,
+                    station.latitude,
+                    station.longitude
+                ])?;
+            }
+        }
+
+        transaction.commit()?;
+    }
+
+    {
+        let transaction = connection.transaction()?;
+
+        {
+            let mut statement = transaction
+                .prepare("INSERT INTO stop_points (stop_point_id, stop_point_name, station_id) VALUES (?1, ?2, ?3)")?;
+
+            for stop_point in stop_points {
+                statement.execute(params![
+                    stop_point.id,
+                    stop_point.name,
+                    stop_point.station_id
+                ])?;
             }
         }
 
@@ -121,17 +126,29 @@ fn create_database(stops: Vec<Stop>, path: &str) -> Result<()> {
     Ok(())
 }
 
+fn gunzip(input_path: &str, output_path: &str) -> Result<()> {
+    let mut input_file = File::open(input_path)?;
+    let mut output_file = File::create(output_path)?;
+
+    let mut encoder = GzEncoder::new(&mut output_file, Compression::best());
+
+    std::io::copy(&mut input_file, &mut encoder)?;
+    encoder.finish()?;
+
+    Ok(())
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     let gtfs_url = get_gtfs_url().await?;
-    let gtfs_path = "gtfs.zip";
 
-    download_gtfs(gtfs_url.as_str(), gtfs_path).await?;
-    extract_gtfs(gtfs_path)?;
+    let stops_data = fetch_stops(gtfs_url.as_str()).await?;
 
-    let stops = parse_stops("stops.txt")?;
+    let (stations, stop_points) = parse_stops(stops_data)?;
 
-    create_database(stops, "gtfs.sqlite")?;
+    create_dir_all("build")?;
+    create_database(stations, stop_points, "build/gtfs.sqlite")?;
+    gunzip("build/gtfs.sqlite", "build/gtfs.sqlite.gz")?;
 
     Ok(())
 }

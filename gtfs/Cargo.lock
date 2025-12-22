@@ -418,6 +418,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "csv",
+ "flate2",
  "reqwest",
  "rusqlite",
  "serde",
