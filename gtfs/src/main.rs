@@ -1,11 +1,10 @@
 mod stops;
 
 use anyhow::Result;
-use flate2::{Compression, write::GzEncoder};
 use rusqlite::{Connection, params};
 use serde::Deserialize;
 use std::{
-    fs::{File, create_dir_all},
+    fs::create_dir_all,
     io::{Cursor, Read},
 };
 use zip::ZipArchive;
