@@ -126,18 +126,6 @@ fn create_database(stations: Vec<Station>, stop_points: Vec<StopPoint>, path: &s
     Ok(())
 }
 
-fn gunzip(input_path: &str, output_path: &str) -> Result<()> {
-    let mut input_file = File::open(input_path)?;
-    let mut output_file = File::create(output_path)?;
-
-    let mut encoder = GzEncoder::new(&mut output_file, Compression::best());
-
-    std::io::copy(&mut input_file, &mut encoder)?;
-    encoder.finish()?;
-
-    Ok(())
-}
-
 #[tokio::main]
 async fn main() -> Result<()> {
     let gtfs_url = get_gtfs_url().await?;
@@ -148,7 +136,6 @@ async fn main() -> Result<()> {
 
     create_dir_all("build")?;
     create_database(stations, stop_points, "build/gtfs.sqlite")?;
-    gunzip("build/gtfs.sqlite", "build/gtfs.sqlite.gz")?;
 
     Ok(())
 }
