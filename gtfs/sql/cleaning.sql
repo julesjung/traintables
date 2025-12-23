@@ -1,0 +1,3 @@
+ANALYZE;
+PRAGMA optimize;
+VACUUM;

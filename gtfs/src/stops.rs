@@ -1,6 +1,7 @@
 use std::io::Cursor;
 
 use anyhow::Result;
+use rusqlite::{Connection, params};
 use serde::Deserialize;
 
 pub struct Station {
@@ -47,7 +48,7 @@ struct Stop {
     parent_station: String,
 }
 
-pub fn parse_stops(data: Vec<u8>) -> Result<(Vec<Station>, Vec<StopPoint>)> {
+pub fn parse_stops(data: &Vec<u8>) -> Result<(Vec<Station>, Vec<StopPoint>)> {
     let cursor = Cursor::new(data);
     let mut reader = csv::Reader::from_reader(cursor);
 
@@ -65,4 +66,48 @@ pub fn parse_stops(data: Vec<u8>) -> Result<(Vec<Station>, Vec<StopPoint>)> {
     }
 
     Ok((stations, stop_points))
+}
+
+pub fn insert_stations(connection: &mut Connection, stations: Vec<Station>) -> Result<()> {
+    let transaction = connection.transaction()?;
+
+    {
+        let mut statement = transaction.prepare(
+            "INSERT INTO stations (id, name, latitude, longitude) VALUES (?1, ?2, ?3, ?4)",
+        )?;
+
+        for station in stations {
+            statement.execute(params![
+                station.id,
+                station.name,
+                station.latitude,
+                station.longitude
+            ])?;
+        }
+    }
+
+    transaction.commit()?;
+
+    Ok(())
+}
+
+pub fn insert_stop_points(connection: &mut Connection, stop_points: Vec<StopPoint>) -> Result<()> {
+    let transaction = connection.transaction()?;
+
+    {
+        let mut statement = transaction
+            .prepare("INSERT INTO stop_points (id, name, station_id) VALUES (?1, ?2, ?3)")?;
+
+        for stop_point in stop_points {
+            statement.execute(params![
+                stop_point.id,
+                stop_point.name,
+                stop_point.station_id
+            ])?;
+        }
+    }
+
+    transaction.commit()?;
+
+    Ok(())
 }
