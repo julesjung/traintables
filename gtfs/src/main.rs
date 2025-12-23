@@ -79,9 +79,6 @@ fn create_database(stations: Vec<Station>, stop_points: Vec<StopPoint>, path: &s
             station_id TEXT NOT NULL,
             FOREIGN KEY (station_id) REFERENCES stations(station_id)
         );
-
-        CREATE INDEX index_stations_name ON stations(station_name);
-        CREATE INDEX index_stop_points_id ON stop_points(stop_point_id);
         ",
     )?;
 
@@ -124,7 +121,21 @@ fn create_database(stations: Vec<Station>, stop_points: Vec<StopPoint>, path: &s
         transaction.commit()?;
     }
 
-    connection.execute_batch("VACUUM; PRAGMA optimize;")?;
+    connection.execute_batch(
+        "
+        CREATE VIRTUAL TABLE stations_fts USING fts5(
+            station_id UNINDEXED,
+            station_name,
+            tokenize = 'unicode61 remove_diacritics 2'
+        );
+
+        INSERT INTO stations_fts (station_id, station_name)
+        SELECT station_id, station_name
+        FROM stations;
+
+        PRAGMA optimize;
+        ",
+    )?;
 
     Ok(())
 }
