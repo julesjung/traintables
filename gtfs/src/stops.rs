@@ -95,8 +95,8 @@ pub fn insert_stop_points(connection: &mut Connection, stop_points: Vec<StopPoin
     let transaction = connection.transaction()?;
 
     {
-        let mut statement = transaction
-            .prepare("INSERT INTO stop_points (id, name, station_id) VALUES (?1, ?2, ?3)")?;
+        let mut statement =
+            transaction.prepare("INSERT INTO stops (id, name, station_id) VALUES (?1, ?2, ?3)")?;
 
         for stop_point in stop_points {
             statement.execute(params![

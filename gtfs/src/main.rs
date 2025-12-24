@@ -1,5 +1,6 @@
 mod database;
 mod routes;
+mod service_days;
 mod stop_times;
 mod stops;
 mod trips;
@@ -15,8 +16,9 @@ use std::{
 use zip::ZipArchive;
 
 use crate::{
-    database::create_database, routes::parse_routes, stop_times::parse_stop_times,
-    stops::parse_stops, trips::parse_trips, update::create_version_file,
+    database::create_database, routes::parse_routes, service_days::parse_services,
+    stop_times::parse_stop_times, stops::parse_stops, trips::parse_trips,
+    update::create_version_file,
 };
 
 #[derive(Deserialize)]
@@ -79,6 +81,7 @@ async fn main() -> Result<()> {
     let routes = parse_routes(files.get("routes.txt").unwrap())?;
     let trips = parse_trips(files.get("trips.txt").unwrap())?;
     let stop_times = parse_stop_times(files.get("stop_times.txt").unwrap())?;
+    let services = parse_services(files.get("calendar_dates.txt").unwrap())?;
 
     create_dir_all("build")?;
     create_database(
@@ -87,6 +90,7 @@ async fn main() -> Result<()> {
         routes,
         trips,
         stop_times,
+        services,
         "build/gtfs.sqlite",
     )?;
 

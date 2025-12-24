@@ -5,7 +5,7 @@ CREATE TABLE stations (
     longitude REAL NOT NULL
 );
 
-CREATE TABLE stop_points (
+CREATE TABLE stops (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
     station_id TEXT NOT NULL,
@@ -24,9 +24,11 @@ CREATE TABLE routes (
 CREATE TABLE trips (
     id TEXT PRIMARY KEY,
     route_id TEXT NOT NULL,
+    service_id INT NOT NULL,
     headsign INT NOT NULL,
     direction INT,
     FOREIGN KEY (route_id) REFERENCES routes(id)
+    FOREIGN KEY (service_id) REFERENCES services(id)
 );
 
 CREATE TABLE stop_times (
@@ -36,5 +38,16 @@ CREATE TABLE stop_times (
     stop_id TEXT NOT NULL,
     stop_sequence INT NOT NULL,
     FOREIGN KEY (trip_id) REFERENCES trips(id),
-    FOREIGN KEY (stop_id) REFERENCES stop_points(id)
+    FOREIGN KEY (stop_id) REFERENCES stops(id)
+);
+
+CREATE TABLE services (
+    id INT PRIMARY KEY
+);
+
+CREATE TABLE service_days (
+    service_id INT NOT NULL,
+    date TEXT NOT NULL,
+    PRIMARY KEY (service_id, date),
+    FOREIGN KEY (service_id) REFERENCES services(id)
 );

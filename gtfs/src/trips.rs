@@ -9,6 +9,7 @@ pub struct Trip {
     #[serde(rename = "trip_id")]
     pub id: String,
     pub route_id: String,
+    pub service_id: u32,
     #[serde(rename = "trip_headsign")]
     pub headsign: u32,
     #[serde(rename = "direction_id")]
@@ -35,13 +36,14 @@ pub fn insert_trips(connection: &mut Connection, trips: Vec<Trip>) -> Result<()>
 
     {
         let mut statement = transaction.prepare(
-            "INSERT INTO trips (id, route_id, headsign, direction) VALUES (?1, ?2, ?3, ?4)",
+            "INSERT INTO trips (id, route_id, service_id, headsign, direction) VALUES (?1, ?2, ?3, ?4, ?5)",
         )?;
 
         for trip in trips {
             statement.execute(params![
                 trip.id,
                 trip.route_id,
+                trip.service_id,
                 trip.headsign,
                 trip.direction,
             ])?;
