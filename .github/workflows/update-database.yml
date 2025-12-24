@@ -22,11 +22,13 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          rust-src-dir: gtfs
       - run: cargo run --manifest-path=gtfs/Cargo.toml
       - run: cd build && zip gtfs.sqlite.zip gtfs.sqlite
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
         with:
-          path: build/
+          path: build
       - uses: actions/deploy-pages@v4
         id: deployment
