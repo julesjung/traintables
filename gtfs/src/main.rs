@@ -79,8 +79,8 @@ async fn main() -> Result<()> {
 
     let (stations, stop_points) = parse_stops(files.get("stops.txt").unwrap())?;
     let routes = parse_routes(files.get("routes.txt").unwrap())?;
-    let trips = parse_trips(files.get("trips.txt").unwrap())?;
-    let stop_times = parse_stop_times(files.get("stop_times.txt").unwrap())?;
+    let (stop_times, endpoints) = parse_stop_times(files.get("stop_times.txt").unwrap())?;
+    let trips = parse_trips(files.get("trips.txt").unwrap(), endpoints)?;
     let services = parse_services(files.get("calendar_dates.txt").unwrap())?;
 
     create_dir_all("build")?;

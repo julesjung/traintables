@@ -27,8 +27,12 @@ CREATE TABLE trips (
     service_id INT NOT NULL,
     headsign INT NOT NULL,
     direction INT,
-    FOREIGN KEY (route_id) REFERENCES routes(id)
-    FOREIGN KEY (service_id) REFERENCES services(id)
+    origin TEXT NOT NULL,
+    destination TEXT NOT NULL,
+    FOREIGN KEY (route_id) REFERENCES routes(id),
+    FOREIGN KEY (service_id) REFERENCES services(id),
+    FOREIGN KEY (origin) REFERENCES stops(id),
+    FOREIGN KEY (destination) REFERENCES stops(id)
 );
 
 CREATE TABLE stop_times (

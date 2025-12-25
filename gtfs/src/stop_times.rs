@@ -1,4 +1,4 @@
-use std::io::Cursor;
+use std::{collections::HashMap, io::Cursor};
 
 use anyhow::Result;
 use rusqlite::{Connection, params};
@@ -13,19 +13,39 @@ pub struct StopTime {
     pub stop_sequence: u8,
 }
 
-pub fn parse_stop_times(data: &Vec<u8>) -> Result<Vec<StopTime>> {
+pub struct Endpoints {
+    pub origin: String,
+    pub destination: String,
+}
+
+impl Endpoints {
+    fn new(origin: String) -> Self {
+        Self {
+            origin: origin.clone(),
+            destination: origin,
+        }
+    }
+}
+
+pub fn parse_stop_times(data: &Vec<u8>) -> Result<(Vec<StopTime>, HashMap<String, Endpoints>)> {
     let cursor = Cursor::new(data);
     let mut reader = csv::Reader::from_reader(cursor);
 
-    let mut trips: Vec<StopTime> = Vec::new();
+    let mut stop_times: Vec<StopTime> = Vec::new();
+    let mut endpoints: HashMap<String, Endpoints> = HashMap::new();
 
-    for trip in reader.deserialize() {
-        let trip: StopTime = trip?;
+    for stop_time in reader.deserialize() {
+        let stop_time: StopTime = stop_time?;
 
-        trips.push(trip);
+        endpoints
+            .entry(stop_time.trip_id.clone())
+            .or_insert(Endpoints::new(stop_time.stop_id.clone()))
+            .destination = stop_time.stop_id.clone();
+
+        stop_times.push(stop_time);
     }
 
-    Ok(trips)
+    Ok((stop_times, endpoints))
 }
 
 pub fn insert_stop_times(connection: &mut Connection, stop_times: Vec<StopTime>) -> Result<()> {
