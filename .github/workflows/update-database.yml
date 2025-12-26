@@ -8,15 +8,6 @@ on:
 
 jobs:
   update-stops-database:
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
-      
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-
     runs-on: ubuntu-latest
 
     steps:
@@ -25,10 +16,29 @@ jobs:
         with:
           rust-src-dir: gtfs
       - run: cargo run --manifest-path=gtfs/Cargo.toml
-      - run: cd build && zip gtfs.sqlite.zip gtfs.sqlite
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v4
-        with:
-          path: build
-      - uses: actions/deploy-pages@v4
-        id: deployment
+      - env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          psql "$DATABASE_URL" <<EOF
+          BEGIN;
+          SET session_replication_role = replica;
+
+          TRUNCATE stop_times;
+          TRUNCATE trips;
+          TRUNCATE routes;
+          TRUNCATE service_days;
+          TRUNCATE services;
+          TRUNCATE stops;
+          TRUNCATE stations;
+
+          \COPY stations FROM 'build/stations.csv' CSV HEADER;
+          \COPY stops FROM 'build/stops.csv' CSV HEADER;
+          \COPY services FROM 'build/services.csv' CSV HEADER;
+          \COPY service_days FROM 'build/service_days.csv' CSV HEADER;
+          \COPY routes FROM 'build/routes.csv' CSV HEADER;
+          \COPY trips FROM 'build/trips.csv' CSV HEADER;
+          \COPY stop_times FROM 'build/stop_times.csv' CSV HEADER;
+
+          SET session_replication_role = DEFAULT;
+          COMMIT;
+          EOF

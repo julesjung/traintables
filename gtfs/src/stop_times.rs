@@ -1,15 +1,13 @@
+use anyhow::Result;
+use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, io::Cursor};
 
-use anyhow::Result;
-use rusqlite::{Connection, params};
-use serde::Deserialize;
-
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
 pub struct StopTime {
     pub trip_id: String,
+    pub stop_id: String,
     pub arrival_time: String,
     pub departure_time: String,
-    pub stop_id: String,
     pub stop_sequence: u8,
 }
 
@@ -48,25 +46,14 @@ pub fn parse_stop_times(data: &Vec<u8>) -> Result<(Vec<StopTime>, HashMap<String
     Ok((stop_times, endpoints))
 }
 
-pub fn insert_stop_times(connection: &mut Connection, stop_times: Vec<StopTime>) -> Result<()> {
-    let transaction = connection.transaction()?;
+pub fn generate_stop_times_csv(stop_times: Vec<StopTime>, path: &str) -> Result<()> {
+    let mut writer = csv::Writer::from_path(path)?;
 
-    {
-        let mut statement = transaction
-            .prepare("INSERT INTO stop_times (trip_id, arrival_time, departure_time, stop_id, stop_sequence) VALUES (?1, ?2, ?3, ?4, ?5)")?;
-
-        for stop_time in stop_times {
-            statement.execute(params![
-                stop_time.trip_id,
-                stop_time.arrival_time,
-                stop_time.departure_time,
-                stop_time.stop_id,
-                stop_time.stop_sequence
-            ])?;
-        }
+    for stop_time in stop_times {
+        writer.serialize(stop_time)?;
     }
 
-    transaction.commit()?;
+    writer.flush()?;
 
     Ok(())
 }

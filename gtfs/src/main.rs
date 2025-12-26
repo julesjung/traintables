@@ -1,10 +1,8 @@
-mod database;
 mod routes;
 mod service_days;
 mod stop_times;
 mod stops;
 mod trips;
-mod update;
 
 use anyhow::Result;
 use serde::Deserialize;
@@ -16,9 +14,11 @@ use std::{
 use zip::ZipArchive;
 
 use crate::{
-    database::create_database, routes::parse_routes, service_days::parse_services,
-    stop_times::parse_stop_times, stops::parse_stops, trips::parse_trips,
-    update::create_version_file,
+    routes::{generate_routes_csv, parse_routes},
+    service_days::{generate_services_csv, parse_services},
+    stop_times::{generate_stop_times_csv, parse_stop_times},
+    stops::{generate_stations_csv, generate_stops_csv, parse_stops},
+    trips::{generate_trips_csv, parse_trips},
 };
 
 #[derive(Deserialize)]
@@ -84,17 +84,13 @@ async fn main() -> Result<()> {
     let services = parse_services(files.get("calendar_dates.txt").unwrap())?;
 
     create_dir_all("build")?;
-    create_database(
-        stations,
-        stop_points,
-        routes,
-        trips,
-        stop_times,
-        services,
-        "build/gtfs.sqlite",
-    )?;
 
-    create_version_file("build/version.txt")?;
+    generate_stations_csv(stations, "build/stations.csv")?;
+    generate_stops_csv(stop_points, "build/stops.csv")?;
+    generate_routes_csv(routes, "build/routes.csv")?;
+    generate_trips_csv(trips, "build/trips.csv")?;
+    generate_stop_times_csv(stop_times, "build/stop_times.csv")?;
+    generate_services_csv(services, "build/services.csv", "build/service_days.csv")?;
 
     Ok(())
 }

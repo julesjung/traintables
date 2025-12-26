@@ -1,21 +1,20 @@
+use anyhow::Result;
+use serde::{Deserialize, Serialize};
 use std::io::Cursor;
 
-use anyhow::Result;
-use rusqlite::{Connection, params};
-use serde::Deserialize;
-
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
 pub struct Route {
-    #[serde(rename = "route_id")]
+    #[serde(rename(deserialize = "route_id"))]
     pub id: String,
-    #[serde(rename = "route_short_name")]
+    #[serde(rename(deserialize = "route_short_name"))]
     pub short_name: String,
-    #[serde(rename = "route_long_name")]
+    #[serde(rename(deserialize = "route_long_name"))]
     pub long_name: String,
+    #[serde(rename(serialize = "type"))]
     pub route_type: u8,
-    #[serde(rename = "route_color")]
+    #[serde(rename(deserialize = "route_color"))]
     pub color: Option<String>,
-    #[serde(rename = "route_text_color")]
+    #[serde(rename(deserialize = "route_text_color"))]
     pub text_color: Option<String>,
 }
 
@@ -34,27 +33,14 @@ pub fn parse_routes(data: &Vec<u8>) -> Result<Vec<Route>> {
     Ok(routes)
 }
 
-pub fn insert_routes(connection: &mut Connection, routes: Vec<Route>) -> Result<()> {
-    let transaction = connection.transaction()?;
+pub fn generate_routes_csv(routes: Vec<Route>, path: &str) -> Result<()> {
+    let mut writer = csv::Writer::from_path(path)?;
 
-    {
-        let mut statement = transaction.prepare(
-            "INSERT INTO routes (id, short_name, long_name, type, color, text_color) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-        )?;
-
-        for route in routes {
-            statement.execute(params![
-                route.id,
-                route.short_name,
-                route.long_name,
-                route.route_type,
-                route.color,
-                route.text_color
-            ])?;
-        }
+    for route in routes {
+        writer.serialize(route)?;
     }
 
-    transaction.commit()?;
+    writer.flush()?;
 
     Ok(())
 }

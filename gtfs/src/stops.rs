@@ -1,9 +1,9 @@
 use std::io::Cursor;
 
 use anyhow::Result;
-use rusqlite::{Connection, params};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
+#[derive(Serialize)]
 pub struct Station {
     pub id: String,
     pub name: String,
@@ -22,9 +22,12 @@ impl Station {
     }
 }
 
+#[derive(Serialize)]
 pub struct StopPoint {
     pub id: String,
     pub name: String,
+    pub latitude: f64,
+    pub longitude: f64,
     pub station_id: String,
 }
 
@@ -33,6 +36,8 @@ impl StopPoint {
         Self {
             id: stop.stop_id,
             name: stop.stop_name,
+            latitude: stop.stop_lat,
+            longitude: stop.stop_lon,
             station_id: stop.parent_station,
         }
     }
@@ -68,46 +73,26 @@ pub fn parse_stops(data: &Vec<u8>) -> Result<(Vec<Station>, Vec<StopPoint>)> {
     Ok((stations, stop_points))
 }
 
-pub fn insert_stations(connection: &mut Connection, stations: Vec<Station>) -> Result<()> {
-    let transaction = connection.transaction()?;
+pub fn generate_stations_csv(stations: Vec<Station>, path: &str) -> Result<()> {
+    let mut writer = csv::Writer::from_path(path)?;
 
-    {
-        let mut statement = transaction.prepare(
-            "INSERT INTO stations (id, name, latitude, longitude) VALUES (?1, ?2, ?3, ?4)",
-        )?;
-
-        for station in stations {
-            statement.execute(params![
-                station.id,
-                station.name,
-                station.latitude,
-                station.longitude
-            ])?;
-        }
+    for station in stations {
+        writer.serialize(station)?;
     }
 
-    transaction.commit()?;
+    writer.flush()?;
 
     Ok(())
 }
 
-pub fn insert_stop_points(connection: &mut Connection, stop_points: Vec<StopPoint>) -> Result<()> {
-    let transaction = connection.transaction()?;
+pub fn generate_stops_csv(stops: Vec<StopPoint>, path: &str) -> Result<()> {
+    let mut writer = csv::Writer::from_path(path)?;
 
-    {
-        let mut statement =
-            transaction.prepare("INSERT INTO stops (id, name, station_id) VALUES (?1, ?2, ?3)")?;
-
-        for stop_point in stop_points {
-            statement.execute(params![
-                stop_point.id,
-                stop_point.name,
-                stop_point.station_id
-            ])?;
-        }
+    for stop in stops {
+        writer.serialize(stop)?;
     }
 
-    transaction.commit()?;
+    writer.flush()?;
 
     Ok(())
 }

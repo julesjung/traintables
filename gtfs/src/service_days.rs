@@ -1,13 +1,22 @@
+use anyhow::Result;
+use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, io::Cursor};
 
-use anyhow::Result;
-use rusqlite::{Connection, params};
-use serde::Deserialize;
-
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
 pub struct ServiceDay {
     pub service_id: u32,
     pub date: String,
+}
+
+#[derive(Serialize)]
+pub struct Service {
+    id: u32,
+}
+
+impl Service {
+    pub fn new(id: u32) -> Self {
+        Self { id }
+    }
 }
 
 pub fn parse_services(data: &Vec<u8>) -> Result<HashMap<u32, Vec<ServiceDay>>> {
@@ -28,28 +37,23 @@ pub fn parse_services(data: &Vec<u8>) -> Result<HashMap<u32, Vec<ServiceDay>>> {
     Ok(services)
 }
 
-pub fn insert_services(
-    connection: &mut Connection,
+pub fn generate_services_csv(
     services: HashMap<u32, Vec<ServiceDay>>,
+    services_path: &str,
+    service_days_path: &str,
 ) -> Result<()> {
-    let transaction = connection.transaction()?;
+    let mut services_writer = csv::Writer::from_path(services_path)?;
+    let mut service_days_writer = csv::Writer::from_path(service_days_path)?;
 
-    {
-        let mut statement = transaction.prepare("INSERT INTO services (id) VALUES (?1)")?;
-
-        for (service_id, service_days) in services {
-            statement.execute(params![service_id])?;
-
-            let mut statement = transaction
-                .prepare("INSERT INTO service_days (service_id, date) VALUES (?1, ?2)")?;
-
-            for service_day in service_days {
-                statement.execute(params![service_day.service_id, service_day.date])?;
-            }
+    for (service_id, service_days) in services {
+        services_writer.serialize(Service::new(service_id))?;
+        for service_day in service_days {
+            service_days_writer.serialize(service_day)?;
         }
     }
 
-    transaction.commit()?;
+    services_writer.flush()?;
+    service_days_writer.flush()?;
 
     Ok(())
 }

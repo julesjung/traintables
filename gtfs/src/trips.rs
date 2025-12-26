@@ -1,8 +1,6 @@
-use std::{collections::HashMap, io::Cursor};
-
 use anyhow::Result;
-use rusqlite::{Connection, params};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
+use std::{collections::HashMap, io::Cursor};
 
 use crate::stop_times::Endpoints;
 
@@ -18,26 +16,27 @@ pub struct GTFSTrip {
     pub direction: Option<u8>,
 }
 
+#[derive(Serialize)]
 pub struct Trip {
     pub id: String,
     pub route_id: String,
     pub service_id: u32,
     pub headsign: String,
     pub direction: Option<u8>,
-    pub origin: String,
-    pub destination: String,
+    pub origin_id: String,
+    pub destination_id: String,
 }
 
 impl Trip {
-    fn new(gtfs_trip: GTFSTrip, origin: String, destination: String) -> Self {
+    fn new(gtfs_trip: GTFSTrip, origin_id: String, destination_id: String) -> Self {
         Self {
             id: gtfs_trip.id,
             route_id: gtfs_trip.route_id,
             service_id: gtfs_trip.service_id,
             headsign: gtfs_trip.headsign,
             direction: gtfs_trip.direction,
-            origin,
-            destination,
+            origin_id,
+            destination_id,
         }
     }
 }
@@ -63,28 +62,14 @@ pub fn parse_trips(data: &Vec<u8>, endpoints: HashMap<String, Endpoints>) -> Res
     Ok(trips)
 }
 
-pub fn insert_trips(connection: &mut Connection, trips: Vec<Trip>) -> Result<()> {
-    let transaction = connection.transaction()?;
+pub fn generate_trips_csv(trips: Vec<Trip>, path: &str) -> Result<()> {
+    let mut writer = csv::Writer::from_path(path)?;
 
-    {
-        let mut statement = transaction.prepare(
-            "INSERT INTO trips (id, route_id, service_id, headsign, direction, origin, destination) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
-        )?;
-
-        for trip in trips {
-            statement.execute(params![
-                trip.id,
-                trip.route_id,
-                trip.service_id,
-                trip.headsign,
-                trip.direction,
-                trip.origin,
-                trip.destination
-            ])?;
-        }
+    for trip in trips {
+        writer.serialize(trip)?;
     }
 
-    transaction.commit()?;
+    writer.flush()?;
 
     Ok(())
 }
