@@ -1,8 +1,8 @@
 name: Update Database
 
 on:
-  # schedule:
-  #  - cron: "0 0 * * *"
+  schedule:
+   - cron: "0 0 * * *"
 
   workflow_dispatch:
 
@@ -17,9 +17,9 @@ jobs:
           rust-src-dir: gtfs
       - run: cargo run --manifest-path=gtfs/Cargo.toml
       - env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          PGPASSWORD: ${{ secrets.DATABASE_PASSWORD }}
         run: |
-          psql "$DATABASE_URL" <<EOF
+          psql -h aws-1-eu-west-1.pooler.supabase.com -p 5432 -d postgres -U postgres.ifeuhrjcyxcxekfhstle <<EOF
           BEGIN;
           SET session_replication_role = replica;
 
