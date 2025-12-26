@@ -23,13 +23,15 @@ jobs:
           BEGIN;
           SET session_replication_role = replica;
 
-          TRUNCATE stop_times;
-          TRUNCATE trips;
-          TRUNCATE routes;
-          TRUNCATE service_days;
-          TRUNCATE services;
-          TRUNCATE stops;
-          TRUNCATE stations;
+          TRUNCATE 
+            stop_times,
+            trips,
+            routes,
+            service_days,
+            services,
+            stops,
+            stations
+          CASCADE;
 
           \COPY stations FROM 'build/stations.csv' CSV HEADER;
           \COPY stops FROM 'build/stops.csv' CSV HEADER;
