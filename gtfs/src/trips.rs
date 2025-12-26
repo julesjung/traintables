@@ -13,7 +13,7 @@ pub struct GTFSTrip {
     pub route_id: String,
     pub service_id: u32,
     #[serde(rename = "trip_headsign")]
-    pub headsign: u32,
+    pub headsign: String,
     #[serde(rename = "direction_id")]
     pub direction: Option<u8>,
 }
@@ -22,7 +22,7 @@ pub struct Trip {
     pub id: String,
     pub route_id: String,
     pub service_id: u32,
-    pub headsign: u32,
+    pub headsign: String,
     pub direction: Option<u8>,
     pub origin: String,
     pub destination: String,

@@ -25,7 +25,7 @@ CREATE TABLE trips (
     id TEXT PRIMARY KEY,
     route_id TEXT NOT NULL,
     service_id INT NOT NULL,
-    headsign INT NOT NULL,
+    headsign TEXT NOT NULL,
     direction INT,
     origin TEXT NOT NULL,
     destination TEXT NOT NULL,
