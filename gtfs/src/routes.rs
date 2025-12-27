@@ -1,15 +1,27 @@
 use anyhow::Result;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize, de};
 use std::io::Cursor;
+
+fn deserialize_short_name<'de, D>(deserializer: D) -> Result<Option<String>, D::Error>
+where
+    D: de::Deserializer<'de>,
+{
+    let short_name: &str = Deserialize::deserialize(deserializer).unwrap();
+    if short_name == "INCONNU" {
+        return Ok(None);
+    }
+    Ok(Some(short_name.to_string()))
+}
 
 #[derive(Deserialize, Serialize)]
 pub struct Route {
     #[serde(rename(deserialize = "route_id"))]
     pub id: String,
-    #[serde(rename(deserialize = "route_short_name"))]
-    pub short_name: String,
-    #[serde(rename(deserialize = "route_long_name"))]
-    pub long_name: String,
+    #[serde(
+        rename(deserialize = "route_short_name"),
+        deserialize_with = "deserialize_short_name"
+    )]
+    pub short_name: Option<String>,
     #[serde(rename(serialize = "type"))]
     pub route_type: u8,
     #[serde(rename(deserialize = "route_color"))]
