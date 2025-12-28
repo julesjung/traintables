@@ -1,3 +1,4 @@
+use crate::Result;
 use serde::{Deserialize, Serialize, de};
 use std::{collections::HashMap, io::Cursor};
 
@@ -32,7 +33,7 @@ impl Endpoints {
     }
 }
 
-fn deserialize_time<'de, D>(deserializer: D) -> Result<u32, D::Error>
+fn deserialize_time<'de, D>(deserializer: D) -> std::result::Result<u32, D::Error>
 where
     D: de::Deserializer<'de>,
 {
@@ -45,9 +46,7 @@ where
     Ok(hours * 3600 + minutes * 60 + seconds)
 }
 
-pub fn parse_stop_times(
-    data: &Vec<u8>,
-) -> anyhow::Result<(Vec<StopTime>, HashMap<String, Endpoints>)> {
+pub fn parse_stop_times(data: &Vec<u8>) -> Result<(Vec<StopTime>, HashMap<String, Endpoints>)> {
     let cursor = Cursor::new(data);
     let mut reader = csv::Reader::from_reader(cursor);
 
@@ -68,7 +67,7 @@ pub fn parse_stop_times(
     Ok((stop_times, endpoints))
 }
 
-pub fn generate_stop_times_csv(stop_times: Vec<StopTime>, path: &str) -> anyhow::Result<()> {
+pub fn generate_stop_times_csv(stop_times: Vec<StopTime>, path: &str) -> Result<()> {
     let mut writer = csv::Writer::from_path(path)?;
 
     for stop_time in stop_times {

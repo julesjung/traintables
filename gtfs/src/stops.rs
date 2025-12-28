@@ -1,7 +1,6 @@
-use std::io::Cursor;
-
-use anyhow::Result;
+use crate::Result;
 use serde::{Deserialize, Serialize};
+use std::io::Cursor;
 
 #[derive(Serialize)]
 pub struct Station {

@@ -1,8 +1,8 @@
-use anyhow::Result;
+use crate::Result;
 use serde::{Deserialize, Serialize, de};
 use std::io::Cursor;
 
-fn deserialize_short_name<'de, D>(deserializer: D) -> Result<Option<String>, D::Error>
+fn deserialize_short_name<'de, D>(deserializer: D) -> std::result::Result<Option<String>, D::Error>
 where
     D: de::Deserializer<'de>,
 {

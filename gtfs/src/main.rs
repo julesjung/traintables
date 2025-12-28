@@ -1,10 +1,18 @@
+mod error;
 mod routes;
 mod service_days;
 mod stop_times;
 mod stops;
 mod trips;
 
-use anyhow::Result;
+use crate::{
+    error::GTFSError,
+    routes::{generate_routes_csv, parse_routes},
+    service_days::{generate_services_csv, parse_services},
+    stop_times::{generate_stop_times_csv, parse_stop_times},
+    stops::{generate_stations_csv, generate_stops_csv, parse_stops},
+    trips::{generate_trips_csv, parse_trips},
+};
 use serde::Deserialize;
 use std::{
     collections::HashMap,
@@ -13,13 +21,7 @@ use std::{
 };
 use zip::ZipArchive;
 
-use crate::{
-    routes::{generate_routes_csv, parse_routes},
-    service_days::{generate_services_csv, parse_services},
-    stop_times::{generate_stop_times_csv, parse_stop_times},
-    stops::{generate_stations_csv, generate_stops_csv, parse_stops},
-    trips::{generate_trips_csv, parse_trips},
-};
+pub type Result<T> = std::result::Result<T, GTFSError>;
 
 #[derive(Deserialize)]
 struct SNCFOpenDataRecord {
