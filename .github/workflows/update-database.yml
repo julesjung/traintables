@@ -19,8 +19,7 @@ jobs:
             ~/.cargo/git
             gtfs/target
           key: ${{ runner.os }}-cargo-${{ hashFiles('gtfs/Cargo.lock') }}
-      - working-directory: gtfs
-        run: cargo run --release
+      -  run: cargo run --release --manifest-path gtfs/Cargo.toml
       - env:
           PGPASSWORD: ${{ secrets.DATABASE_PASSWORD }}
         run: |
