@@ -1,7 +1,159 @@
 {
   "sourceLanguage" : "fr",
   "strings" : {
-
+    "arrivals" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Arrivées"
+          }
+        }
+      }
+    },
+    "departures" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Départs"
+          }
+        }
+      }
+    },
+    "downloading_data" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chargement"
+          }
+        }
+      }
+    },
+    "early" : {
+      "comment" : "The train is early",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ d’avance"
+          }
+        }
+      }
+    },
+    "home" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accueil"
+          }
+        }
+      }
+    },
+    "late" : {
+      "comment" : "The train is late",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ de retard"
+          }
+        }
+      }
+    },
+    "loading_arrivals" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chargement de arrivées"
+          }
+        }
+      }
+    },
+    "loading_departures" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chargement des départs"
+          }
+        }
+      }
+    },
+    "loading_trip_stops" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chargement des arrêts"
+          }
+        }
+      }
+    },
+    "no_arrival_found" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucune arrivée dans les prochaines 24 heures"
+          }
+        }
+      }
+    },
+    "no_departure_found" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucun départ dans les prochaines 24 heures"
+          }
+        }
+      }
+    },
+    "on_time" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "À l’heure"
+          }
+        }
+      }
+    },
+    "page_selection" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choix de la page"
+          }
+        }
+      }
+    },
+    "route_%@" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Route n°%@"
+          }
+        }
+      }
+    },
+    "search" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rechercher"
+          }
+        }
+      }
+    }
   },
   "version" : "1.1"
 }
