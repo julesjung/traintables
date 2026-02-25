@@ -207,11 +207,9 @@ name = "gtfs"
 version = "0.1.0"
 dependencies = [
  "csv",
- "reqwest",
  "serde",
  "tokio",
  "traintables_core",
- "zip",
 ]
 
 [[package]]

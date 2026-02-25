@@ -11,38 +11,15 @@ use crate::{
     stops::{generate_stations_csv, generate_stops_csv, parse_stops},
     trips::{generate_trips_csv, parse_trips},
 };
-use std::{
-    collections::HashMap,
-    fs::create_dir_all,
-    io::{Cursor, Read},
-};
-use traintables_core::error::Result;
-use zip::ZipArchive;
-
-async fn fetch_gtfs_files(gtfs_url: &str) -> Result<HashMap<String, Vec<u8>>> {
-    let data = reqwest::get(gtfs_url).await?.bytes().await?;
-
-    let reader = Cursor::new(data.to_vec());
-    let mut archive = ZipArchive::new(reader)?;
-
-    let mut data = HashMap::new();
-
-    for file_name in 0..archive.len() {
-        let mut file = archive.by_index(file_name)?;
-        let mut buffer: Vec<u8> = Vec::with_capacity(file.size() as usize);
-        file.read_to_end(&mut buffer)?;
-        data.insert(String::from(file.name()), buffer);
-    }
-
-    Ok(data)
-}
+use std::{collections::HashMap, fs::create_dir_all};
+use traintables_core::{error::Result, fetch, unzip};
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let gtfs_url =
+    let url =
         "https://eu.ftp.opendatasoft.com/sncf/plandata/Export_OpenData_SNCF_GTFS_NewTripId.zip";
-
-    let files: HashMap<String, Vec<u8>> = fetch_gtfs_files(gtfs_url).await?;
+    let data = fetch(url).await?;
+    let files: HashMap<String, Vec<u8>> = unzip(data).await?;
 
     let (stations, stop_points) = parse_stops(files.get("stops.txt").unwrap())?;
     let routes = parse_routes(files.get("routes.txt").unwrap())?;
