@@ -1,4 +1,3 @@
-mod error;
 mod routes;
 mod service_days;
 mod stop_times;
@@ -6,54 +5,19 @@ mod stops;
 mod trips;
 
 use crate::{
-    error::GTFSError,
     routes::{generate_routes_csv, parse_routes},
     service_days::{generate_services_csv, parse_services},
     stop_times::{generate_stop_times_csv, parse_stop_times},
     stops::{generate_stations_csv, generate_stops_csv, parse_stops},
     trips::{generate_trips_csv, parse_trips},
 };
-use serde::Deserialize;
 use std::{
     collections::HashMap,
     fs::create_dir_all,
     io::{Cursor, Read},
 };
+use traintables_core::error::Result;
 use zip::ZipArchive;
-
-pub type Result<T> = std::result::Result<T, GTFSError>;
-
-#[derive(Deserialize)]
-struct SNCFOpenDataRecord {
-    donnees: String,
-    format: String,
-    download: String,
-}
-
-#[derive(Deserialize)]
-struct SNCFOpenDataResponse {
-    results: Vec<SNCFOpenDataRecord>,
-}
-
-async fn get_gtfs_url() -> Result<String> {
-    let response: SNCFOpenDataResponse = reqwest::get(
-        "https://ressources.data.sncf.com/api/explore/v2.1/catalog/datasets/horaires-sncf/records",
-    )
-    .await?
-    .json()
-    .await?;
-    let gtfs_url = response
-        .results
-        .iter()
-        .find(|&record| {
-            record.format == "GTFS" && record.donnees == "Horaires des lignes SNCF théorique"
-        })
-        .unwrap()
-        .download
-        .clone();
-
-    Ok(gtfs_url)
-}
 
 async fn fetch_gtfs_files(gtfs_url: &str) -> Result<HashMap<String, Vec<u8>>> {
     let data = reqwest::get(gtfs_url).await?.bytes().await?;
@@ -61,7 +25,7 @@ async fn fetch_gtfs_files(gtfs_url: &str) -> Result<HashMap<String, Vec<u8>>> {
     let reader = Cursor::new(data.to_vec());
     let mut archive = ZipArchive::new(reader)?;
 
-    let mut data: HashMap<String, Vec<u8>> = HashMap::new();
+    let mut data = HashMap::new();
 
     for file_name in 0..archive.len() {
         let mut file = archive.by_index(file_name)?;
@@ -75,9 +39,10 @@ async fn fetch_gtfs_files(gtfs_url: &str) -> Result<HashMap<String, Vec<u8>>> {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let gtfs_url = get_gtfs_url().await?;
+    let gtfs_url =
+        "https://eu.ftp.opendatasoft.com/sncf/plandata/Export_OpenData_SNCF_GTFS_NewTripId.zip";
 
-    let files = fetch_gtfs_files(gtfs_url.as_str()).await?;
+    let files: HashMap<String, Vec<u8>> = fetch_gtfs_files(gtfs_url).await?;
 
     let (stations, stop_points) = parse_stops(files.get("stops.txt").unwrap())?;
     let routes = parse_routes(files.get("routes.txt").unwrap())?;

@@ -1,9 +1,9 @@
 use std::io;
 
-use thiserror::Error;
+pub type Result<T> = std::result::Result<T, Error>;
 
-#[derive(Debug, Error)]
-pub enum GTFSError {
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
     #[error("network error")]
     Network(#[from] reqwest::Error),
     #[error("io error")]

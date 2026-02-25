@@ -1,4 +1,4 @@
-name: Update Database
+name: Update GTFS
 
 on:
   schedule:
@@ -21,14 +21,13 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             gtfs/target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('gtfs/Cargo.lock') }}
-      - run: cargo run --manifest-path gtfs/Cargo.toml
+          key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
+      - run: cargo run -p gtfs
       - env:
           PGPASSWORD: ${{ secrets.DATABASE_PASSWORD }}
         run: |
           psql -h aws-1-eu-west-1.pooler.supabase.com -p 5432 -d postgres -U postgres.ifeuhrjcyxcxekfhstle <<EOF
           BEGIN;
-          SET session_replication_role = replica;
 
           TRUNCATE
             stop_times,
@@ -48,6 +47,5 @@ jobs:
           \COPY trips FROM 'build/trips.csv' CSV HEADER;
           \COPY stop_times FROM 'build/stop_times.csv' CSV HEADER;
 
-          SET session_replication_role = DEFAULT;
           COMMIT;
           EOF

@@ -1,0 +1,7 @@
+[workspace]
+members = [
+    "gtfs",
+    "siri",
+    "core"
+]
+resolver = "3"
