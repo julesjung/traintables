@@ -1,6 +1,0 @@
-{
-    "imports": {
-        "@supabase/supabase-js": "npm:@supabase/supabase-js@2.97.0",
-        "gtfs-realtime-bindings": "npm:gtfs-realtime-bindings@1.1.1"
-    }
-}
