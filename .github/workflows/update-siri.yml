@@ -19,4 +19,5 @@ jobs:
             ~/.cargo/git
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
-      - run: cargo run -p siri
+      - run: cargo build --release -p siri
+      - run: ./target/release/siri

@@ -20,9 +20,10 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            gtfs/target
+            target
           key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
-      - run: cargo run -p gtfs
+      - run: cargo build --realease -p gtfs
+      - run: ./target/release/gtfs
       - env:
           PGPASSWORD: ${{ secrets.DATABASE_PASSWORD }}
         run: |
