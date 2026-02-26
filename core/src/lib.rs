@@ -1,31 +1,47 @@
-pub mod error;
-
 use std::{
-    collections::HashMap,
-    io::{Cursor, Read},
+    fs,
+    io::{self, BufReader},
+    path::Path,
 };
 
+use anyhow::Result;
+use futures::StreamExt;
+use tokio::io::AsyncWriteExt;
 use zip::ZipArchive;
 
-use crate::error::Result;
+pub async fn download(url: &str, path: &str) -> Result<()> {
+    let response = reqwest::get(url).await?;
 
-pub async fn fetch(url: &str) -> Result<Vec<u8>> {
-    let data = reqwest::get(url).await?.bytes().await?;
-    Ok(data.to_vec())
+    let mut stream = response.bytes_stream();
+
+    let mut file = tokio::fs::File::create(path).await?;
+
+    while let Some(chunk) = stream.next().await {
+        let chunk = chunk?;
+        file.write_all(&chunk).await?;
+    }
+
+    Ok(())
 }
 
-pub async fn unzip(data: Vec<u8>) -> Result<HashMap<String, Vec<u8>>> {
-    let reader = Cursor::new(data.to_vec());
-    let mut archive = ZipArchive::new(reader)?;
+pub async fn unzip(input_path: &str, output_dir: &str) -> Result<()> {
+    let file = fs::File::open(input_path)?;
 
-    let mut files = HashMap::new();
+    let mut archive = ZipArchive::new(BufReader::new(file))?;
 
     for index in 0..archive.len() {
         let mut file = archive.by_index(index)?;
-        let mut buffer: Vec<u8> = Vec::with_capacity(file.size() as usize);
-        file.read_to_end(&mut buffer)?;
-        files.insert(String::from(file.name()), buffer);
+        let output_path = Path::new(output_dir).join(file.name());
+
+        if file.is_file() {
+            if let Some(parent) = output_path.parent() {
+                fs::create_dir_all(parent)?;
+            }
+
+            let mut output_file = fs::File::create(output_path)?;
+            io::copy(&mut file, &mut output_file)?;
+        }
     }
 
-    Ok(files)
+    Ok(())
 }

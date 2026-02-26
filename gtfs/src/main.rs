@@ -1,24 +1,47 @@
+mod error;
 mod routes;
 mod service_days;
 mod stop_times;
 mod stops;
 mod trips;
 
+use zip::ZipArchive;
+
 use crate::{
+    error::Result,
     routes::{generate_routes_csv, parse_routes},
     service_days::{generate_services_csv, parse_services},
     stop_times::{generate_stop_times_csv, parse_stop_times},
     stops::{generate_stations_csv, generate_stops_csv, parse_stops},
     trips::{generate_trips_csv, parse_trips},
 };
-use std::{collections::HashMap, fs::create_dir_all};
-use traintables_core::{error::Result, fetch, unzip};
+use std::{
+    collections::HashMap,
+    fs::create_dir_all,
+    io::{Cursor, Read},
+};
+
+async fn unzip(data: Vec<u8>) -> Result<HashMap<String, Vec<u8>>> {
+    let reader = Cursor::new(data.to_vec());
+    let mut archive = ZipArchive::new(reader)?;
+
+    let mut files = HashMap::new();
+
+    for index in 0..archive.len() {
+        let mut file = archive.by_index(index)?;
+        let mut buffer: Vec<u8> = Vec::with_capacity(file.size() as usize);
+        file.read_to_end(&mut buffer)?;
+        files.insert(String::from(file.name()), buffer);
+    }
+
+    Ok(files)
+}
 
 #[tokio::main]
 async fn main() -> Result<()> {
     let url =
         "https://eu.ftp.opendatasoft.com/sncf/plandata/Export_OpenData_SNCF_GTFS_NewTripId.zip";
-    let data = fetch(url).await?;
+    let data = reqwest::get(url).await?.bytes().await?.to_vec();
     let files: HashMap<String, Vec<u8>> = unzip(data).await?;
 
     let (stations, stop_points) = parse_stops(files.get("stops.txt").unwrap())?;

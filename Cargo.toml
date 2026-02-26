@@ -1,7 +1,7 @@
 [workspace]
 members = [
-    "gtfs",
-    "siri",
-    "core"
+    "gtfs", "netex",
+    "siri"
+, "core"
 ]
 resolver = "3"
