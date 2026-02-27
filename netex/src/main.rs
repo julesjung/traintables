@@ -1,4 +1,3 @@
-mod location;
 mod service_frame;
 mod site_frame;
 

@@ -1,28 +1,15 @@
-use crate::location::Location;
 use csv::Writer;
 use quick_xml::{Reader, events::BytesStart};
-use serde::{Serialize, Serializer, ser::SerializeStruct};
+use serde::Serialize;
 use std::io::BufRead;
 use tracing::info;
-use traintables_core::{Parse, get_attribute, parse_tag};
+use traintables_core::{Parse, get_attribute, parse_tag, read_text};
 
-#[derive(Default)]
+#[derive(Default, Serialize)]
 struct RoutePoint {
     id: String,
-    location: Location,
-}
-
-impl Serialize for RoutePoint {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        let mut state = serializer.serialize_struct("RoutePoint", 3)?;
-        state.serialize_field("id", &self.id)?;
-        state.serialize_field("longitude", &self.location.longitude)?;
-        state.serialize_field("latitude", &self.location.latitude)?;
-        state.end()
-    }
+    latitude: f64,
+    longitude: f64,
 }
 
 impl Parse for RoutePoint {
@@ -32,18 +19,24 @@ impl Parse for RoutePoint {
         Self: Sized,
     {
         let id = get_attribute(e, b"id").expect("id not found");
-        let mut location = Location::default();
+        let mut latitude = 0.0;
+        let mut longitude = 0.0;
 
         parse_tag(reader, b"RoutePoint", |reader, e| {
             match e.name().as_ref() {
-                b"Location" => location = Location::parse(reader, e)?,
+                b"Latitude" => latitude = read_text(reader, b"Latitude")?.parse()?,
+                b"Longitude" => longitude = read_text(reader, b"Longitude")?.parse()?,
                 _ => (),
             }
 
             Ok(())
         })?;
 
-        Ok(Self { id, location })
+        Ok(Self {
+            id,
+            latitude,
+            longitude,
+        })
     }
 }
 
