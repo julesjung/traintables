@@ -6,6 +6,7 @@ edition = "2024"
 [dependencies]
 anyhow = "1.0.102"
 futures = "0.3.32"
+quick-xml = "0.39.2"
 reqwest = { version = "0.13.2", features = ["stream"] }
 tokio = { version = "1.49.0", features = ["full"] }
 zip = "8.1.0"

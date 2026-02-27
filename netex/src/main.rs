@@ -1,12 +1,12 @@
+mod location;
+mod service_frame;
 mod site_frame;
 
-use anyhow::{Context, Result};
-use quick_xml::{Reader, events::Event};
+use anyhow::{Context as _, Result};
+use quick_xml::Reader;
 use std::fs;
 use tracing::{Level, info};
-use traintables_core::{download, unzip};
-
-use crate::site_frame::parse_site_frame;
+use traintables_core::{download, parse, unzip};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -45,29 +45,19 @@ async fn main() -> Result<()> {
     let mut reader = Reader::from_file(file_path)?;
     reader.config_mut().trim_text(true);
 
-    let mut buf = Vec::new();
-
-    loop {
-        match reader.read_event_into(&mut buf) {
-            Ok(Event::Eof) => break,
-            Ok(Event::Start(e)) => {
-                let name = e.name();
-                match name.as_ref() {
-                    b"SiteFrame" => {
-                        parse_site_frame(
-                            &mut reader,
-                            "build/stop_places.csv",
-                            "build/topographic_places.csv",
-                        )?;
-                    }
-                    _ => (),
-                }
+    parse(&mut reader, |reader, e| {
+        match e.name().as_ref() {
+            b"SiteFrame" => {
+                site_frame::parse(reader)?;
+            }
+            b"ServiceFrame" => {
+                service_frame::parse(reader)?;
             }
             _ => (),
         }
 
-        buf.clear();
-    }
+        Ok(())
+    })?;
 
     Ok(())
 }
