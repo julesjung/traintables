@@ -3,3 +3,4 @@ build/
 backend/
 .DS_Store
 xcuserdata/
+supabase/

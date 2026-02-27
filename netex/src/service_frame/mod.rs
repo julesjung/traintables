@@ -1,6 +1,7 @@
 mod lines;
 mod route_points;
 mod routes;
+mod scheduled_stop_points;
 
 use anyhow::Result;
 use quick_xml::Reader;
@@ -16,6 +17,7 @@ where
             b"routePoints" => route_points::parse(reader)?,
             b"routes" => routes::parse(reader)?,
             b"lines" => lines::parse(reader)?,
+            b"scheduledStopPoints" => scheduled_stop_points::parse(reader)?,
             _ => (),
         }
 

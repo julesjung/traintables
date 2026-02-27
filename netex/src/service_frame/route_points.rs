@@ -16,7 +16,6 @@ impl Parse for RoutePoint {
     fn parse<R>(reader: &mut quick_xml::Reader<R>, e: &BytesStart) -> anyhow::Result<Self>
     where
         R: std::io::BufRead,
-        Self: Sized,
     {
         let id = get_attribute(e, b"id").expect("id not found");
         let mut latitude = 0.0;

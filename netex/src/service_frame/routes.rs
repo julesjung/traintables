@@ -19,7 +19,6 @@ impl Parse for Route {
     fn parse<R>(reader: &mut Reader<R>, e: &BytesStart) -> anyhow::Result<Self>
     where
         R: std::io::BufRead,
-        Self: Sized,
     {
         let id = get_attribute(e, b"id").context("id not found")?;
         let mut distance = 0;
