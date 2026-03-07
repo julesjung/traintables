@@ -1,5 +1,7 @@
+mod models;
 mod service_frame;
 mod site_frame;
+
 use anyhow::{Context as _, Result};
 use quick_xml::Reader;
 use std::fs;

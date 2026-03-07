@@ -1,8 +1,8 @@
+mod journey_patterns;
 mod lines;
 mod route_points;
 mod routes;
 mod scheduled_stop_points;
-
 use anyhow::Result;
 use quick_xml::Reader;
 use std::io::BufRead;
@@ -18,6 +18,7 @@ where
             b"routes" => routes::parse(reader)?,
             b"lines" => lines::parse(reader)?,
             b"scheduledStopPoints" => scheduled_stop_points::parse(reader)?,
+            b"journeyPatterns" => journey_patterns::parse(reader)?,
             _ => (),
         }
 
